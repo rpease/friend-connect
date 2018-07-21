@@ -1,5 +1,6 @@
 from GeoUtilities import *
 from math import *
+from multipledispatch import dispatch
 
 class GeoCoordinate:
 
@@ -20,17 +21,17 @@ class GeoCoordinate:
 
     def __str__(self):
         
-        out_lat = "{self.latitude}N"
+        out_lat = f"{self.latitude}N"
         if self.latitude < 0:
             neg_lat = -self.latitude
-            out_lat = "{neg_lat}S"
+            out_lat = f"{neg_lat}S"
 
-        out_lon = "{self.longitude}E"
+        out_lon = f"{self.longitude}E"
         if self.latitude < 0:
             neg_lon = -self.longitude
-            out_lon = "{neg_lon}W"
+            out_lon = f"{neg_lon}W"
 
-        return "({out_lat},{out_lon})"
+        return f"({out_lat},{out_lon})"
 
     @dispatch(float,float)
     def Get_Distance_Km(self,lat,lon):
@@ -43,7 +44,7 @@ class GeoCoordinate:
         sqrt_term = math.sqrt(term1 + term2*term3)
         return 2.0*self._r*math.asin(sqrt_term)
 
-    @dispatch(GeoCoordinate)
+    @dispatch(object)
     def Get_Distance_Km(self,coordinate):
         return self.Get_Distance_Km(coordinate.latitude,coordinate.longitude)
 
@@ -64,4 +65,6 @@ class GeoLocation:
 
     def Get_Longitude(self):
         return self._coordinate.longitude
-   
+
+    def __str__(self):
+        return f"{self._name}:\t{self._coordinate}"

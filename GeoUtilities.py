@@ -22,8 +22,9 @@ def Convert_Spherical_To_Geo(r,polar_angle_radians,azimuthal_angle_radians):
     radius_percent_error = abs(r-EARTH_RADIUS_KM) / EARTH_RADIUS_KM
     if radius_percent_error > 0.003:
         print("Provided Spherical Coordinate not valid for a geological position.")
-        print("r = {r}")
-        print("Earth's Radius [km] = {EARTH_RADIUS_KM}")
+        print(f"r = {r}")
+        print(f"Earth's Radius [km] = {EARTH_RADIUS_KM}")
+        raise ValueError
 
     polar_angle_degrees = DEGREES_PER_RADIAN * polar_angle_radians
     latitude = 90.0 - polar_angle_degrees

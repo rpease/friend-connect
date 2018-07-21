@@ -16,8 +16,8 @@ class Friend:
         self.Set_Location(latitude,longitude)
 
     def __str__(self):
-        out_string = f"Name = {self._name}\n"
-        out_string += f"ID = {self._user_id}\n"
+        out_string = f"Name = {self._name}\t"
+        out_string += f"ID = {self._user_id}"
         return out_string
 
     @dispatch(GeoLocation)
@@ -25,5 +25,9 @@ class Friend:
         self._location = location
 
     @dispatch(float,float)
+    def Set_Location(self,latitude,longitude):
+        self._location = GeoLocation(self._name,latitude,longitude)
+
+    @dispatch(str,float,float)
     def Set_Location(self,name,latitude,longitude):
         self._location = GeoLocation(name,latitude,longitude)
