@@ -1,5 +1,6 @@
 from Friend import *
 from Location import *
+from CityRater import *
 import pandas
 from urllib.request import urlretrieve
 
@@ -21,10 +22,11 @@ def LoadCities(file_path):
     cities = []
 
     df = pandas.read_csv(file_path)
-    df = df[df["population"] > 1000.0]
+    df = df[df["population"] > 50000.0]
 
     for index,row in df.iterrows():        
-        new_city = GeoLocation(row["city"],row["lat"],row["lng"])
+        new_city = City(row["city"],row["lat"],row["lng"])
+        new_city.Set_Population(row["population"])
         cities.append(new_city)       
 
     print(f"Loaded {len(cities)} cities")
@@ -33,3 +35,9 @@ def LoadCities(file_path):
 test_users = LoadFakeUsers(r"test_data\users.csv")
 test_cities = LoadCities(r"test_data\uscitiesv1.4.csv")
 
+city_rater = CityRater(test_cities,test_users)
+city_rater.Set_Population_Weight(0.00005)
+top_cities = city_rater.Get_Top_Cities()
+
+for city in top_cities:
+    print(city)

@@ -38,15 +38,11 @@ class GeoCoordinate:
 
         r,polar,azi = Convert_Geo_To_Spherical(lat,lon)
 
-        term1 = hav(polar - self.latitude)
-        term2 = cos(polar)*cos(self.latitude)
-        term3 = hav(azi - self.longitude)
+        term1 = hav(polar - self._polar_angle)
+        term2 = cos(polar)*cos(self._polar_angle)
+        term3 = hav(azi - self._azimuthal_angle)
         sqrt_term = math.sqrt(term1 + term2*term3)
         return 2.0*self._r*math.asin(sqrt_term)
-
-    @dispatch(object)
-    def Get_Distance_Km(self,coordinate):
-        return self.Get_Distance_Km(coordinate.latitude,coordinate.longitude)
 
 class GeoLocation:
 
@@ -66,5 +62,37 @@ class GeoLocation:
     def Get_Longitude(self):
         return self._coordinate.longitude
 
+    def Get_Distance_Km(self,friend):
+        coord = friend.Get_Location()
+        other_lat = coord.Get_Latitude()
+        other_lon = coord.Get_Longitude()
+        return self._coordinate.Get_Distance_Km(other_lat,other_lon)
+
     def __str__(self):
         return f"{self._name}:\t{self._coordinate}"
+
+class City(GeoLocation):
+
+    def Set_Population(self,population):
+        self._population = population
+
+    def Get_Population(self):
+        return self._population
+
+    def Set_Score(self,score):
+        self._score = score
+
+    def Get_Score(self):
+        return self._score    
+    
+    def __lt__(self,other):
+        if self._score < other.Get_Score():
+            return True
+        else:
+            return False
+
+    def __gt__(self,other):
+        return not self.__lt__(self,other)
+
+    def __str__(self):
+        return f"{self._score}\t{self._name}:\t{self._coordinate}"

@@ -31,3 +31,6 @@ class Friend:
     @dispatch(str,float,float)
     def Set_Location(self,name,latitude,longitude):
         self._location = GeoLocation(name,latitude,longitude)
+
+    def Get_Location(self):
+        return self._location
