@@ -2,7 +2,7 @@ from Friend import *
 from Location import *
 from CityRater import *
 import pandas
-from urllib.request import urlretrieve
+
 
 def LoadFakeUsers(file_path):
     friends = []
@@ -22,7 +22,7 @@ def LoadCities(file_path):
     cities = []
 
     df = pandas.read_csv(file_path)
-    df = df[df["population"] > 50000.0]
+    df = df[df["population"] > 10000.0]
 
     for index,row in df.iterrows():        
         new_city = City(row["city"],row["lat"],row["lng"])
@@ -41,3 +41,6 @@ top_cities = city_rater.Get_Top_Cities()
 
 for city in top_cities:
     print(city)
+
+city_rater.Plot_Results()
+#city_rater.Plot_Results_Smopy()

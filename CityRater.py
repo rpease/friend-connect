@@ -1,5 +1,7 @@
 from multipledispatch import dispatch
 from Friend import *
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class CityRater:
     
@@ -58,3 +60,28 @@ class CityRater:
             city.Set_Score(self._Score_Function(population,average_distance))    
 
         self._valid_calculation = True
+
+    def Plot_Results(self):
+
+        x_data = []
+        y_data = []
+        f_data = []
+        f_2d = []
+
+        x_data_user = []
+        y_data_user = []
+
+        for city in self._cities:
+            x_data.append(city.Get_Longitude())
+            y_data.append(city.Get_Latitude())
+            f_data.append(city.Get_Score())
+
+        for user in self._users:
+            coord = user.Get_Location()
+            x_data_user.append(coord.Get_Longitude())
+            y_data_user.append(coord.Get_Latitude())
+
+        plt.scatter(x_data,y_data,c=f_data,alpha=0.5)
+        plt.colorbar()
+        sns.scatterplot(x_data_user,y_data_user)        
+        plt.show()        
