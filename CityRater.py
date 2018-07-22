@@ -2,6 +2,7 @@ from multipledispatch import dispatch
 from Friend import *
 import matplotlib.pyplot as plt
 import seaborn as sns
+import folium
 
 class CityRater:
     
@@ -61,6 +62,20 @@ class CityRater:
 
         self._valid_calculation = True
 
+    def Get_Geographical_Center(self):
+        avg_lat = 0.0
+        avg_lon = 0.0
+         
+        for user in self._users:
+            coord = user.Get_Location()
+            avg_lat += coord.Get_Latitude()
+            avg_lon += coord.Get_Longitude()
+        
+        avg_lat /= len(self._users)
+        avg_lon /= len(self._users)
+
+        return (avg_lat,avg_lon)
+
     def Plot_Results(self):
 
         x_data = []
@@ -85,3 +100,38 @@ class CityRater:
         plt.colorbar()
         sns.scatterplot(x_data_user,y_data_user)        
         plt.show()        
+
+    def Plot_Results_Folium(self):
+        x_data = []
+        y_data = []
+        f_data = []
+        f_2d = []
+
+        x_data_user = []
+        y_data_user = []
+
+        for city in self._cities:
+            x_data.append(city.Get_Longitude())
+            y_data.append(city.Get_Latitude())
+            f_data.append(city.Get_Score())
+
+        for user in self._users:
+            coord = user.Get_Location()
+            x_data_user.append(coord.Get_Longitude())
+            y_data_user.append(coord.Get_Latitude())
+
+        lat,lon = self.Get_Geographical_Center()
+
+        folium_map = folium.Map(location=[lat,lon],zoom_start=5)
+
+        # Add Cities to Map
+        for i in range(len(x_data)):
+            folium.CircleMarker(location=[y_data[i],x_data[i]],
+            fill=True).add_to(folium_map)
+
+        # Add users to map
+        for i in range(len(y_data_user)):
+            folium.Marker(location=[y_data_user[i],x_data_user[i]],
+                popup=self._users[i]._name).add_to(folium_map) 
+
+        folium_map.save("Map.html")        
