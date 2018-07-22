@@ -7,6 +7,7 @@ from folium.plugins import HeatMap
 import branca
 import numpy as np
 import webbrowser
+import os
 
 class CityRater:
     
@@ -95,8 +96,6 @@ class CityRater:
             y_data.append(city.Get_Latitude())
             f_data.append(city.Get_Score())
 
-            
-
         for user in self._users:
             coord = user.Get_Location()
             x_data_user.append(coord.Get_Longitude())
@@ -130,7 +129,7 @@ class CityRater:
 
         lat,lon = self.Get_Geographical_Center()
 
-        folium_map = folium.Map(location=[lat,lon],zoom_start=8,tiles="CartoDB dark_matter")
+        folium_map = folium.Map(location=[lat,lon],zoom_start=7,tiles="CartoDB dark_matter")
 
         color_map = branca.colormap.linear.YlOrRd_09.scale(np.average(f_data),max(f_data))
 
@@ -151,4 +150,5 @@ class CityRater:
         #HeatMap(xyf_data).add_to(folium_map)
 
         folium_map.save("Map.html")
-        webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s").open("Map.html",new=2)   
+        webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s").open("Map.html",new=1)
+        os.remove("Map.html")

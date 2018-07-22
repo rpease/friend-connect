@@ -3,7 +3,6 @@ from Location import *
 from CityRater import *
 import pandas
 
-
 def LoadFakeUsers(file_path):
     friends = []
     df = pandas.read_csv(file_path)
