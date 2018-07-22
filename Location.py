@@ -79,6 +79,7 @@ class City(GeoLocation):
     def __init__(self,name,latitude,longitude):
         super().__init__(name,latitude,longitude)
         self._sub_scores = {}
+        self._norm_scores = {}
 
     def Set_Population(self,population):
         self._population = population
@@ -100,6 +101,15 @@ class City(GeoLocation):
     
     def Get_SubScore(self,key):
         return self._sub_scores[key]
+
+    def Get_NormScore(self,key):
+        if key in self._norm_scores:
+            return self._norm_scores[key]
+        else:
+            return 0.0
+    
+    def Set_NormScore(self,key,value):
+        self._norm_scores[key] = value
     
     def __lt__(self,other):
         if self._score < other.Get_Score():
@@ -112,3 +122,12 @@ class City(GeoLocation):
 
     def __str__(self):
         return f"{self._score}\t{self._name}:\t{self._coordinate}"
+
+    def Get_Description(self):
+        #outstring = f"{self._name}\n"
+        outstring = "Average Absolute Distance = {:.0f} miles\n".format(self._sub_scores["hav"]*MILES_PER_KILOMETER)
+        #outstring+= "Population = {:,}\n".format(self._sub_scores["pop"])
+        #outstring+= "Average Drive Distance = {:,} [km]\n".format(self._sub_scores["drive"]/1000.0)
+        outstring+= "Average Drive Time = {:.1f} hours\n".format(self._sub_scores["time"]/60.0)
+
+        return outstring

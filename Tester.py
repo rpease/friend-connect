@@ -21,7 +21,7 @@ def LoadCities(file_path):
     cities = []
 
     df = pandas.read_csv(file_path)
-    df = df[df["population"] > 100000.0]
+    df = df[df["population"] > 10000.0]
     df = df.sort_values(by=['population'],ascending=False)
     df = df.iloc[:200]
 
@@ -43,6 +43,4 @@ top_cities = city_rater.Get_Top_Cities()
 for city in top_cities:
     print(city)
 
-#city_rater.Plot_Results()
-city_rater.Plot_Results_Folium()
-#city_rater.Plot_Results_Smopy()
+city_rater.Plot_Results()

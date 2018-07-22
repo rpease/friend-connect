@@ -64,7 +64,7 @@ class CityRater:
         self._weights["drive"] = weight
 
     def _Score_Function(self,city):
-        return self._weights["pop"]*city.Get_SubScore("pop") - self._weights["hav"]*city.Get_SubScore("hav") - self._weights["time"]*city.Get_SubScore("time") - self._weights["drive"]*city.Get_SubScore("drive")
+        return self._weights["pop"]*city.Get_NormScore("pop") - self._weights["hav"]*city.Get_NormScore("hav") - self._weights["time"]*city.Get_NormScore("time") - self._weights["drive"]*city.Get_NormScore("drive")
 
     def _Calculate_Scores(self):
 
@@ -111,7 +111,7 @@ class CityRater:
         for city in self._cities:
             for key,max_value in max_dict.items():
                 if max_value > 0:
-                    city.Set_SubScore(key,city.Get_SubScore(key)/max_value)
+                    city.Set_NormScore(key,city.Get_SubScore(key)/max_value)
             city.Set_Score(self._Score_Function(city))
         self._valid_calculation = True
 
@@ -148,34 +148,9 @@ class CityRater:
             print(f"\tQuery Failed: {url}")
             return self.Get_Driving_Directions(city,user)
 
-        return (driving_distance_meters,travel_time_minutes)
+        return (driving_distance_meters,travel_time_minutes)    
 
     def Plot_Results(self):
-
-        x_data = []
-        y_data = []
-        f_data = []
-        xyf_data = []
-
-        x_data_user = []
-        y_data_user = []
-
-        for city in self._cities:
-            x_data.append(city.Get_Longitude())
-            y_data.append(city.Get_Latitude())
-            f_data.append(city.Get_Score())
-
-        for user in self._users:
-            coord = user.Get_Location()
-            x_data_user.append(coord.Get_Longitude())
-            y_data_user.append(coord.Get_Latitude())
-
-        plt.scatter(x_data,y_data,c=f_data,alpha=0.5)
-        plt.colorbar()
-        sns.scatterplot(x_data_user,y_data_user)        
-        plt.show()     
-
-    def Plot_Results_Folium(self):
         x_data = []
         y_data = []
         f_data = []
@@ -208,12 +183,19 @@ class CityRater:
             folium.CircleMarker(location=[y_data[i],x_data[i]],
                 fill=True,
                 color=color_code,
-                fill_color=color_code).add_to(folium_map)
+                fill_color=color_code,
+                radius=f_data[i]*50.0,
+                popup=self._cities[i].Get_Description()).add_to(folium_map)
 
         # Add users to map
         for i in range(len(y_data_user)):
             folium.Marker(location=[y_data_user[i],x_data_user[i]],
-                popup=self._users[i]._name).add_to(folium_map) 
+                popup=self._users[i]._name).add_to(folium_map)
+
+        # Add Geographical Center of Users        
+        folium.Marker(location=[lat,lon],
+            popup="Geographical Center of Users",
+            icon=folium.Icon(color='green')).add_to(folium_map)
 
         # Heat Map
         #HeatMap(xyf_data).add_to(folium_map)

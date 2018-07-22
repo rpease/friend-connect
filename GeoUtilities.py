@@ -4,6 +4,7 @@ import math
 EARTH_RADIUS_KM = 6.3781e3
 DEGREES_PER_RADIAN = 180.0 / math.pi
 RADIANS_PER_DEGREE = 1.0 / DEGREES_PER_RADIAN
+MILES_PER_KILOMETER = 0.621371 / 1.0
 
 def Convert_Geo_To_Spherical(latitude,longitude):
 
