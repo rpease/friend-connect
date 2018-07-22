@@ -3,6 +3,10 @@ from Friend import *
 import matplotlib.pyplot as plt
 import seaborn as sns
 import folium
+from folium.plugins import HeatMap
+import branca
+import numpy as np
+import webbrowser
 
 class CityRater:
     
@@ -81,7 +85,7 @@ class CityRater:
         x_data = []
         y_data = []
         f_data = []
-        f_2d = []
+        xyf_data = []
 
         x_data_user = []
         y_data_user = []
@@ -90,6 +94,8 @@ class CityRater:
             x_data.append(city.Get_Longitude())
             y_data.append(city.Get_Latitude())
             f_data.append(city.Get_Score())
+
+            
 
         for user in self._users:
             coord = user.Get_Location()
@@ -99,13 +105,13 @@ class CityRater:
         plt.scatter(x_data,y_data,c=f_data,alpha=0.5)
         plt.colorbar()
         sns.scatterplot(x_data_user,y_data_user)        
-        plt.show()        
+        plt.show()     
 
     def Plot_Results_Folium(self):
         x_data = []
         y_data = []
         f_data = []
-        f_2d = []
+        xyf_data = []
 
         x_data_user = []
         y_data_user = []
@@ -115,6 +121,8 @@ class CityRater:
             y_data.append(city.Get_Latitude())
             f_data.append(city.Get_Score())
 
+            xyf_data.append([city.Get_Latitude(),city.Get_Longitude(),city.Get_Score()])
+
         for user in self._users:
             coord = user.Get_Location()
             x_data_user.append(coord.Get_Longitude())
@@ -122,16 +130,25 @@ class CityRater:
 
         lat,lon = self.Get_Geographical_Center()
 
-        folium_map = folium.Map(location=[lat,lon],zoom_start=5)
+        folium_map = folium.Map(location=[lat,lon],zoom_start=8,tiles="CartoDB dark_matter")
+
+        color_map = branca.colormap.linear.YlOrRd_09.scale(np.average(f_data),max(f_data))
 
         # Add Cities to Map
         for i in range(len(x_data)):
+            color_code = color_map(f_data[i])
             folium.CircleMarker(location=[y_data[i],x_data[i]],
-            fill=True).add_to(folium_map)
+                fill=True,
+                color=color_code,
+                fill_color=color_code).add_to(folium_map)
 
         # Add users to map
         for i in range(len(y_data_user)):
             folium.Marker(location=[y_data_user[i],x_data_user[i]],
                 popup=self._users[i]._name).add_to(folium_map) 
 
-        folium_map.save("Map.html")        
+        # Heat Map
+        #HeatMap(xyf_data).add_to(folium_map)
+
+        folium_map.save("Map.html")
+        webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s").open("Map.html",new=2)   
