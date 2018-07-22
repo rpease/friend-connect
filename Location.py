@@ -76,6 +76,10 @@ class GeoLocation:
 
 class City(GeoLocation):
 
+    def __init__(self,name,latitude,longitude):
+        super().__init__(name,latitude,longitude)
+        self._sub_scores = {}
+
     def Set_Population(self,population):
         self._population = population
 
@@ -86,7 +90,16 @@ class City(GeoLocation):
         self._score = score
 
     def Get_Score(self):
-        return self._score    
+        return self._score
+
+    def Set_SubScore(self,key,value):           
+        self._sub_scores[key] = value
+
+    def Get_SubScores(self):
+        return self._sub_scores
+    
+    def Get_SubScore(self,key):
+        return self._sub_scores[key]
     
     def __lt__(self,other):
         if self._score < other.Get_Score():

@@ -25,6 +25,7 @@ class CityRater:
         self.Set_Haversine_Weight(1.0)
         self.Set_Population_Weight(1.0)
         self.Set_Travel_Time_Weight(1.0)
+        self.Set_Drive_Distance_Weight(1.0)
 
     @dispatch(Friend)
     def Add_User(self,user):
@@ -58,13 +59,26 @@ class CityRater:
         self._valid_calculation = False
         self._weights["time"] = weight
 
-    def _Score_Function(self,population,distance,time):
-        return self._weights["pop"]*population - self._weights["hav"]*distance - self._weights["time"]*time
+    def Set_Drive_Distance_Weight(self,weight):
+        self._valid_calculation = False
+        self._weights["drive"] = weight
 
-    def _Calculate_Scores(self):        
-        for city in self._cities:   
-            print(city._name)
-            population = city.Get_Population()
+    def _Score_Function(self,city):
+        return self._weights["pop"]*city.Get_SubScore("pop") - self._weights["hav"]*city.Get_SubScore("hav") - self._weights["time"]*city.Get_SubScore("time") - self._weights["drive"]*city.Get_SubScore("drive")
+
+    def _Calculate_Scores(self):
+
+        max_dict = {}
+        max_dict["pop"] = 0.0
+        max_dict["hav"] = 0.0
+        max_dict["time"] = 0.0
+        max_dict["drive"] = 0.0
+
+        # Get Pre-Normalized Values
+        for city in self._cities:
+            city_name = city._name  
+            print(city_name)
+            population = math.log10(city.Get_Population())
             average_distance = 0.0
             average_driving_time_min = 0.0
             average_driving_distance_m = 0.0
@@ -72,16 +86,33 @@ class CityRater:
             for user in self._users:
                 average_distance += city.Get_Distance_Km(user)
 
-                driving_distance_m,travel_time_min = self.Get_Driving_Directions(city.Get_Coordinate(),user.Get_Location())
-                average_driving_time_min += travel_time_min
-                average_driving_distance_m += driving_distance_m
+                #driving_distance_m,travel_time_min = self.Get_Driving_Directions(city.Get_Coordinate(),user.Get_Location())
+                #average_driving_time_min += travel_time_min
+                #average_driving_distance_m += driving_distance_m
 
             average_distance /= len(self._users)
             average_driving_time_min /= len(self._users)
             average_driving_distance_m /= len(self._users)
 
-            city.Set_Score(self._Score_Function(population,average_driving_distance_m,average_driving_time_min))    
+            if population > max_dict["pop"]:
+                max_dict["pop"] = population
+            if average_distance> max_dict["hav"]:
+                max_dict["hav"] = average_distance
+            if average_driving_time_min > max_dict["time"]:
+                max_dict["time"] = average_driving_time_min
+            if average_driving_distance_m > max_dict["drive"]:
+                max_dict["drive"] = average_driving_distance_m
 
+            city.Set_SubScore("pop",population)
+            city.Set_SubScore("hav",average_distance)
+            city.Set_SubScore("time",average_driving_time_min)
+            city.Set_SubScore("drive",average_driving_distance_m)
+
+        for city in self._cities:
+            for key,max_value in max_dict.items():
+                if max_value > 0:
+                    city.Set_SubScore(key,city.Get_SubScore(key)/max_value)
+            city.Set_Score(self._Score_Function(city))
         self._valid_calculation = True
 
     def Get_Geographical_Center(self):
