@@ -37,7 +37,7 @@ test_users = LoadFakeUsers(r"test_data\users.csv")
 test_cities = LoadCities(r"test_data\uscitiesv1.4.csv")
 
 city_rater = CityRater(test_cities,test_users)
-city_rater.Set_Population_Weight(0.5)
+city_rater.Set_Population_Weight(1.5)
 top_cities = city_rater.Get_Top_Cities()
 
 for city in top_cities:

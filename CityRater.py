@@ -64,7 +64,10 @@ class CityRater:
         self._weights["drive"] = weight
 
     def _Score_Function(self,city):
-        return self._weights["pop"]*city.Get_NormScore("pop") - self._weights["hav"]*city.Get_NormScore("hav") - self._weights["time"]*city.Get_NormScore("time") - self._weights["drive"]*city.Get_NormScore("drive")
+        score = self._weights["pop"]*city.Get_NormScore("pop") - self._weights["hav"]*city.Get_NormScore("hav") - self._weights["time"]*city.Get_NormScore("time") - self._weights["drive"]*city.Get_NormScore("drive")
+        if score < 0:
+            score = 0.0
+        return score
 
     def _Calculate_Scores(self):
 
@@ -74,8 +77,11 @@ class CityRater:
         max_dict["time"] = 0.0
         max_dict["drive"] = 0.0
 
+        distance_matrix,time_matrix = self._Google_Estimate_API_Matrix()
+
         # Get Pre-Normalized Values
-        for city in self._cities:
+        for c in range(len(self._cities)):
+            city = self._cities[c]
             city_name = city._name  
             print(city_name)
             population = math.log10(city.Get_Population())
@@ -83,12 +89,16 @@ class CityRater:
             average_driving_time_min = 0.0
             average_driving_distance_m = 0.0
 
-            for user in self._users:
+            for u in range(len(self._users)):
+                user = self._users[u]
                 average_distance += city.Get_Distance_Km(user)
 
                 #driving_distance_m,travel_time_min = self.Get_Driving_Directions(city.Get_Coordinate(),user.Get_Location())
                 #average_driving_time_min += travel_time_min
                 #average_driving_distance_m += driving_distance_m
+                                 
+                average_driving_time_min += time_matrix[c][u]
+                average_driving_distance_m += distance_matrix[c][u]
 
             average_distance /= len(self._users)
             average_driving_time_min /= len(self._users)
@@ -131,6 +141,9 @@ class CityRater:
 
     # https://stackoverflow.com/questions/31696411/google-maps-directions-python
     def Get_Driving_Directions(self,city,user):
+        return self._Google_Estimate_API(city,user)          
+
+    def _Google_Directions_API(self,city,user) :
         start = city.Get_Google_API_String()
         finish = user.Get_Coordinate().Get_Google_API_String()
 
@@ -138,17 +151,87 @@ class CityRater:
                     ('origin', start),
                     ('destination', finish)
         ))
-        ur = urllib.request.urlopen(url)
-        result = json.load(ur)
 
-        try:
-            driving_distance_meters = result["routes"][0]["legs"][0]["distance"]["value"]
-            travel_time_minutes = result["routes"][0]["legs"][0]["duration"]["value"]
-        except:
-            print(f"\tQuery Failed: {url}")
-            return self.Get_Driving_Directions(city,user)
+        tries = 50
+        got_json = False
+        try_attempt = 0
+        while try_attempt < tries:            
+            try:
+                ur = urllib.request.urlopen(url)
+                result = json.load(ur)
+        
+                driving_distance_meters = result["routes"][0]["legs"][0]["distance"]["value"]
+                travel_time_minutes = result["routes"][0]["legs"][0]["duration"]["value"] / 60.0
+                return (driving_distance_meters,travel_time_minutes)
+            except:
+                try_attempt += 1
 
-        return (driving_distance_meters,travel_time_minutes)    
+        raise Error       
+
+    def _Google_Estimate_API(self,city,user) :
+        start = city.Get_Google_API_String()
+        finish = user.Get_Coordinate().Get_Google_API_String()
+
+        url = 'https://maps.googleapis.com/maps/api/distancematrix/json?%s' % urllib.parse.urlencode((
+                    ('origins', start),
+                    ('destinations', finish)
+        ))
+
+        tries = 50
+        got_json = False
+        try_attempt = 0
+        while try_attempt < tries:            
+            try:
+                ur = urllib.request.urlopen(url)
+                result = json.load(ur)
+        
+                driving_distance_meters = result["rows"][0]["elements"][0]["distance"]["value"]
+                travel_time_minutes = result["rows"][0]["elements"][0]["duration"]["value"] / 60.0
+                return (driving_distance_meters,travel_time_minutes)
+            except:
+                try_attempt += 1
+
+        raise Error
+
+    def _Google_Estimate_API_Matrix(self) :
+
+        distance_matrix = np.empty([len(self._cities),len(self._users)])
+        time_matrix = np.empty([len(self._cities),len(self._users)])
+
+        start_string = ''
+        for user in self._users:
+            start_string += user.Get_Location().Get_Coordinate().Get_Google_API_String() + '|'
+        start_string = start_string[:-1] # ignore last bar
+        
+        finish_string = ''
+        for city in self._cities:
+            finish_string += city.Get_Coordinate().Get_Google_API_String() + '|'
+
+        url = 'https://maps.googleapis.com/maps/api/distancematrix/json?%s' % urllib.parse.urlencode((
+                    ('origins', start_string),
+                    ('destinations', finish_string)
+        ))
+
+        tries = 50
+        got_json = False
+        try_attempt = 0
+        while try_attempt < tries:            
+            try:
+                ur = urllib.request.urlopen(url)
+                result = json.load(ur)
+        
+                # ["rows"][userindex]["elements"][cityindex]
+                for city_index in range(len(self._cities)):
+                    for user_index in range(len(self._users)):
+                        distance_matrix[city_index][user_index] = result["rows"][user_index]["elements"][city_index]["distance"]["value"]
+                        time_matrix[city_index][user_index] = result["rows"][user_index]["elements"][city_index]["duration"]["value"] / 60.0                
+                
+                return (distance_matrix,time_matrix)
+            except:
+                try_attempt += 1
+
+        print(result["error_message"])
+        raise Error 
 
     def Plot_Results(self):
         x_data = []
