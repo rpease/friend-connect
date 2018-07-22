@@ -21,7 +21,9 @@ def LoadCities(file_path):
     cities = []
 
     df = pandas.read_csv(file_path)
-    df = df[df["population"] > 50000.0]
+    df = df[df["population"] > 100000.0]
+    df = df.sort_values(by=['population'],ascending=False)
+    df = df.iloc[:100]
 
     for index,row in df.iterrows():        
         new_city = City(row["city"],row["lat"],row["lng"])
@@ -35,7 +37,8 @@ test_users = LoadFakeUsers(r"test_data\users.csv")
 test_cities = LoadCities(r"test_data\uscitiesv1.4.csv")
 
 city_rater = CityRater(test_cities,test_users)
-city_rater.Set_Population_Weight(0.00005)
+city_rater.Set_Population_Weight(0.0)
+city_rater.Set_Travel_Time_Weight(0.5)
 top_cities = city_rater.Get_Top_Cities()
 
 for city in top_cities:

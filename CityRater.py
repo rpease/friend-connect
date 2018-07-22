@@ -8,6 +8,9 @@ import branca
 import numpy as np
 import webbrowser
 import os
+import json
+import googlemaps
+import urllib
 
 class CityRater:
     
@@ -21,6 +24,7 @@ class CityRater:
         self._weights = {}
         self.Set_Haversine_Weight(1.0)
         self.Set_Population_Weight(1.0)
+        self.Set_Travel_Time_Weight(1.0)
 
     @dispatch(Friend)
     def Add_User(self,user):
@@ -50,20 +54,33 @@ class CityRater:
         self._valid_calculation = False
         self._weights["pop"] = weight
 
-    def _Score_Function(self,population,distance):
-        return self._weights["pop"]*population - self._weights["hav"]*distance
+    def Set_Travel_Time_Weight(self,weight):
+        self._valid_calculation = False
+        self._weights["time"] = weight
+
+    def _Score_Function(self,population,distance,time):
+        return self._weights["pop"]*population - self._weights["hav"]*distance - self._weights["time"]*time
 
     def _Calculate_Scores(self):        
         for city in self._cities:   
-
+            print(city._name)
             population = city.Get_Population()
             average_distance = 0.0
+            average_driving_time_min = 0.0
+            average_driving_distance_m = 0.0
 
             for user in self._users:
                 average_distance += city.Get_Distance_Km(user)
-            average_distance /= len(self._users)
 
-            city.Set_Score(self._Score_Function(population,average_distance))    
+                driving_distance_m,travel_time_min = self.Get_Driving_Directions(city.Get_Coordinate(),user.Get_Location())
+                average_driving_time_min += travel_time_min
+                average_driving_distance_m += driving_distance_m
+
+            average_distance /= len(self._users)
+            average_driving_time_min /= len(self._users)
+            average_driving_distance_m /= len(self._users)
+
+            city.Set_Score(self._Score_Function(population,average_driving_distance_m,average_driving_time_min))    
 
         self._valid_calculation = True
 
@@ -80,6 +97,27 @@ class CityRater:
         avg_lon /= len(self._users)
 
         return (avg_lat,avg_lon)
+
+    # https://stackoverflow.com/questions/31696411/google-maps-directions-python
+    def Get_Driving_Directions(self,city,user):
+        start = city.Get_Google_API_String()
+        finish = user.Get_Coordinate().Get_Google_API_String()
+
+        url = 'http://maps.googleapis.com/maps/api/directions/json?%s' % urllib.parse.urlencode((
+                    ('origin', start),
+                    ('destination', finish)
+        ))
+        ur = urllib.request.urlopen(url)
+        result = json.load(ur)
+
+        try:
+            driving_distance_meters = result["routes"][0]["legs"][0]["distance"]["value"]
+            travel_time_minutes = result["routes"][0]["legs"][0]["duration"]["value"]
+        except:
+            print(f"\tQuery Failed: {url}")
+            return self.Get_Driving_Directions(city,user)
+
+        return (driving_distance_meters,travel_time_minutes)
 
     def Plot_Results(self):
 

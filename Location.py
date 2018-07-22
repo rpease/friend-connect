@@ -44,6 +44,9 @@ class GeoCoordinate:
         sqrt_term = math.sqrt(term1 + term2*term3)
         return 2.0*self._r*math.asin(sqrt_term)
 
+    def Get_Google_API_String(self):
+        return f"{self.latitude},{self.longitude}"
+
 class GeoLocation:
 
     def __init__(self,name,latitude = 0.0,longitude = 0.0):
