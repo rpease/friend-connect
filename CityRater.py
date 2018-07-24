@@ -6,10 +6,8 @@ import folium
 from folium.plugins import HeatMap
 import branca
 import numpy as np
-import webbrowser
 import os
 import json
-import googlemaps
 import urllib
 
 class CityRater:
@@ -166,7 +164,7 @@ class CityRater:
             except:
                 try_attempt += 1
 
-        raise Error       
+        raise Exception("Couldn't complete Google API Request.")      
 
     def _Google_Estimate_API(self,city,user) :
         start = city.Get_Google_API_String()
@@ -191,7 +189,7 @@ class CityRater:
             except:
                 try_attempt += 1
 
-        raise Error
+        raise Exception("Couldn't complete Google API Request.")
 
     def _Google_Estimate_API_Matrix(self) :
 
@@ -229,9 +227,8 @@ class CityRater:
                 return (distance_matrix,time_matrix)
             except:
                 try_attempt += 1
-
-        print(result["error_message"])
-        raise Error 
+        
+        raise Exception(result["error_message"]) 
 
     def Plot_Results(self):
         x_data = []
