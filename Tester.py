@@ -20,13 +20,14 @@ def LoadFakeUsers(file_path):
 def LoadCities(file_path):
     cities = []
 
-    df = pandas.read_csv(file_path)
+    df = pandas.read_csv(file_path,encoding='iso-8859-1')
     df = df[df["population"] > 10000.0]
+    df = df[(df["country code"] == "CA" )| (df["country code"] == "US") | (df["country code"] == "MX")]
     df = df.sort_values(by=['population'],ascending=False)
-    df = df.iloc[:200]
+    df = df.iloc[:400]
 
     for index,row in df.iterrows():        
-        new_city = City(row["city"],row["lat"],row["lng"])
+        new_city = City(row["name"],row["latitude"],row["longitude"])
         new_city.Set_Population(row["population"])
         cities.append(new_city)       
 
@@ -34,10 +35,10 @@ def LoadCities(file_path):
     return cities    
 
 test_users = LoadFakeUsers(r"test_data\users.csv")
-test_cities = LoadCities(r"test_data\uscitiesv1.4.csv")
+test_cities = LoadCities(r"test_data\city15000.csv")
 
 city_rater = CityRater(test_cities,test_users)
-city_rater.Set_Population_Weight(0.5)
+city_rater.Set_Population_Weight(1.0)
 top_cities = city_rater.Get_Top_Cities()
 
 for city in top_cities:
