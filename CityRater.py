@@ -9,6 +9,7 @@ import numpy as np
 import os
 import json
 import urllib
+import webbrowser
 
 class CityRater:
     
@@ -75,7 +76,7 @@ class CityRater:
         max_dict["time"] = 0.0
         max_dict["drive"] = 0.0
 
-        distance_matrix,time_matrix = self._Google_Estimate_API_Matrix()
+        #distance_matrix,time_matrix = self._Google_Estimate_API_Matrix()
 
         # Get Pre-Normalized Values
         for c in range(len(self._cities)):
@@ -95,8 +96,8 @@ class CityRater:
                 #average_driving_time_min += travel_time_min
                 #average_driving_distance_m += driving_distance_m
                                  
-                average_driving_time_min += time_matrix[c][u]
-                average_driving_distance_m += distance_matrix[c][u]
+                #average_driving_time_min += time_matrix[c][u]
+                #average_driving_distance_m += distance_matrix[c][u]
 
             average_distance /= len(self._users)
             average_driving_time_min /= len(self._users)
@@ -264,7 +265,7 @@ class CityRater:
                 fill=True,
                 color=color_code,
                 fill_color=color_code,
-                radius=f_data[i]*50.0,
+                radius=f_data[i]*70.0,
                 popup=self._cities[i].Get_Description()).add_to(folium_map)
 
         # Add users to map
