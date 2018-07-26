@@ -12,6 +12,8 @@ import urllib
 import webbrowser
 
 class CityRater:
+
+    driving_speed_kph = 112.65
     
     def __init__(self,cities,users = []):
         self._cities = cities
@@ -88,12 +90,18 @@ class CityRater:
             average_driving_time_min = 0.0
             average_driving_distance_m = 0.0
 
+            if city_name == "Chicago":
+                print("DEBUG")
+
             for u in range(len(self._users)):
                 user = self._users[u]
-                average_distance += city.Get_Distance_Km(user)
+                travel_distance_km = city.Get_Distance_Km(user)
+                average_distance += travel_distance_km
 
                 #driving_distance_m,travel_time_min = self.Get_Driving_Directions(city.Get_Coordinate(),user.Get_Location())
-                #average_driving_time_min += travel_time_min
+                travel_time_min = 60.0*travel_distance_km/self.driving_speed_kph
+
+                average_driving_time_min += travel_time_min
                 #average_driving_distance_m += driving_distance_m
                                  
                 #average_driving_time_min += time_matrix[c][u]
@@ -265,7 +273,7 @@ class CityRater:
                 fill=True,
                 color=color_code,
                 fill_color=color_code,
-                radius=f_data[i]*70.0,
+                radius=f_data[i]*50.0,
                 popup=self._cities[i].Get_Description()).add_to(folium_map)
 
         # Add users to map
