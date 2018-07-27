@@ -10,6 +10,7 @@ import os
 import json
 import urllib
 import webbrowser
+import math
 
 class CityRater:
 

@@ -35,14 +35,11 @@ class GeoCoordinate:
 
     @dispatch(float,float)
     def Get_Distance_Km(self,lat,lon):
+        return haversine_distance_km(self.latitude,self.longitude,lat,lon)
 
-        r,polar,azi = Convert_Geo_To_Spherical(lat,lon)
-
-        term1 = hav(polar - self._polar_angle)
-        term2 = cos(polar)*cos(self._polar_angle)
-        term3 = hav(azi - self._azimuthal_angle)
-        sqrt_term = math.sqrt(term1 + term2*term3)
-        return 2.0*self._r*math.asin(sqrt_term)
+    @dispatch(float,tuple)
+    def Get_Distance_Km(self,coordinate):
+        return haversine_distance_km(self.latitude,self.longitude,coordinate[0],coordinate[1])        
 
     def Get_Google_API_String(self):
         return f"{self.latitude},{self.longitude}"
