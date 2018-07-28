@@ -1,26 +1,31 @@
 from GeoUtilities import *
 from math import *
 from multipledispatch import dispatch
+import typing
+
 
 class GeoCoordinate:
 
-    def __init__(self,latitude,longitude):
-        if latitude > 90.0 or latitude < -90:
-            print("Provided latitude not valid")
-            print("-90 <= Latitude <= 90")
-            print("Provided latitude = {latitude}")
-        if longitude > 180.0 or longitude < -180.0:
-            print("Provided longitude not valid")
-            print("-180.0 <= Longitude <= 180.0")
-            print("Provided latitude = {longitude}")
+    latitude: float
+    longitude: float
+    _r: float
+    _polar_angle: float
+    _azimuthal_angle: float
 
-        self.latitude = latitude
-        self.longitude = longitude
+    def __init__(self, lat: float, lon: float):
+        if lat > 90.0 or lat < -90:
+            error_string = f"Provided latitude not valid\n-90 <= Latitude <= 90\nProvided: {latitude}"
+            raise ValueError(error_string)
+        if lon > 180.0 or lon < -180.0:
+            error_string = f"Provided longitude not valid\n-180 <= Latitude <= 180\nProvided: {longitude}"
+            raise ValueError(error_string)
 
-        self._r, self._polar_angle, self._azimuthal_angle = Convert_Geo_To_Spherical(latitude,longitude)
+        self.latitude = lat
+        self.longitude = lon
+
+        self._r, self._polar_angle, self._azimuthal_angle = Convert_Geo_To_Spherical(lat, lon)
 
     def __str__(self):
-        
         out_lat = f"{self.latitude}N"
         if self.latitude < 0:
             neg_lat = -self.latitude
@@ -33,98 +38,107 @@ class GeoCoordinate:
 
         return f"({out_lat},{out_lon})"
 
-    @dispatch(float,float)
-    def Get_Distance_Km(self,lat,lon):
-        return haversine_distance_km(self.latitude,self.longitude,lat,lon)
+    @dispatch(float, float)
+    def get_distance_km(self, lat: float, lon: float)-> float:
+        return haversine_distance_km(self.latitude, self.longitude, lat, lon)
 
-    @dispatch(float,tuple)
-    def Get_Distance_Km(self,coordinate):
-        return haversine_distance_km(self.latitude,self.longitude,coordinate[0],coordinate[1])        
+    @dispatch(float, tuple)
+    def get_distance_km(self, coordinate: tuple)-> float:
+        return haversine_distance_km(self.latitude, self.longitude, coordinate[0], coordinate[1])
 
-    def Get_Google_API_String(self):
+    def get_google_api_string(self)-> str:
         return f"{self.latitude},{self.longitude}"
 
-class GeoLocation:
 
-    def __init__(self,name,latitude = 0.0,longitude = 0.0):
+class VacationDestination:
+
+    _name: str
+    _coordinate: GeoCoordinate
+
+    def __init__(self, name: str, latitude=0.0, longitude=0.0):
+        self.set_name(name)
+        self.set_location(latitude, longitude)
+
+    def set_location(self, lat: float, lon: float):
+        self._coordinate = GeoCoordinate(lat, lon)
+
+    def set_name(self, name: str):
         self._name = name
-        self._coordinate = GeoCoordinate(latitude,longitude)
 
-    def Get_Name(self):
+    def get_name(self)-> str:
         return self._name
-    
-    def Get_Coordinate(self):
+
+    def get_location(self)-> GeoCoordinate:
         return self._coordinate
 
-    def Get_Latitude(self):
+    def get_latitude(self)-> float:
         return self._coordinate.latitude
 
-    def Get_Longitude(self):
+    def get_longitude(self)-> float:
         return self._coordinate.longitude
 
-    def Get_Distance_Km(self,friend):
-        coord = friend.Get_Location()
-        other_lat = coord.Get_Latitude()
-        other_lon = coord.Get_Longitude()
-        return self._coordinate.Get_Distance_Km(other_lat,other_lon)
+    @dispatch(GeoCoordinate)
+    def get_distance_km(self, coordinate: GeoCoordinate)-> float:
+        return self.get_distance_km(coordinate.latitude, coordinate.longitude)
 
-    def __str__(self):
+    @dispatch(float, float)
+    def get_distance_km(self, lat: float, lon: float)-> float:
+        return self._coordinate.get_distance_km(lat, lon)
+
+    def get_fun_score(self)-> float:
+        raise NotImplementedError("Fun score not implemented")
+
+    def get_outdoor_score(self)-> float:
+        raise NotImplementedError("Outdoor score not implemented")
+
+    def get_description(self)-> str:
         return f"{self._name}:\t{self._coordinate}"
 
-class City(GeoLocation):
+    def __str__(self):
+        return self.get_description()
 
-    def __init__(self,name,latitude,longitude):
-        super().__init__(name,latitude,longitude)
-        self._sub_scores = {}
-        self._norm_scores = {}
 
-    def Set_Population(self,population):
-        self._population = population
+class City(VacationDestination):
 
-    def Get_Population(self):
+    _population: float
+
+    def __init__(self, name: str, latitude: float, longitude: float, pop: float):
+        self.set_name(name)
+        self.set_location(latitude, longitude)
+        self.set_population(pop)
+
+    def set_population(self,pop: float):
+        if pop <= 0:
+            raise ValueError(f"Population must be greater than 0\nProvided: {pop}")
+        self._population = pop
+
+    def get_population(self)-> float:
         return self._population
 
-    def Set_Score(self,score):
-        self._score = score
+    def get_fun_score(self)-> float:
+        return self.get_population()
 
-    def Get_Score(self):
-        return self._score
+    def get_outdoor_score(self)-> float:
+        return 0.0
 
-    def Set_SubScore(self,key,value):           
-        self._sub_scores[key] = value
+    def get_description(self)-> str:
+        return f"{self._name}:\t{self._population}\t{self._coordinate}"
 
-    def Get_SubScores(self):
-        return self._sub_scores
-    
-    def Get_SubScore(self,key):
-        return self._sub_scores[key]
 
-    def Get_NormScore(self,key):
-        if key in self._norm_scores:
-            return self._norm_scores[key]
-        else:
-            return 0.0
-    
-    def Set_NormScore(self,key,value):
-        self._norm_scores[key] = value
-    
-    def __lt__(self,other):
-        if self._score < other.Get_Score():
-            return True
-        else:
-            return False
+class Park(VacationDestination):
 
-    def __gt__(self,other):
-        return not self.__lt__(self,other)
+    _park_area_km2: float
 
-    def __str__(self):
-        return f"{self._score}\t{self._name}:\t{self._coordinate}"
+    def set_park_area(self, area: float):
+        if area <= 0:
+            raise ValueError(f"Park Area must be greater than 0\nProvided: {pop}")
+        self._park_area_km2 = area
 
-    def Get_Description(self):
-        #outstring = f"{self._name}\n"
-        outstring = "Average Absolute Distance = {:.0f} miles\n".format(self._sub_scores["hav"]*MILES_PER_KILOMETER)
-        #outstring+= "Population = {:,}\n".format(self._sub_scores["pop"])
-        #outstring+= "Average Drive Distance = {:,} [km]\n".format(self._sub_scores["drive"]/1000.0)
-        outstring+= "Average Drive Time = {:.1f} hours\n".format(self._sub_scores["time"]/60.0)
+    def get_fun_score(self)-> float:
+        return self._park_area_km2
 
-        return outstring
+    def get_outdoor_score(self)-> float:
+        return 1.0
+
+    def get_description(self)-> str:
+        return f"{self._name}:\t{self._park_area_km2}\t{self._coordinate}"
