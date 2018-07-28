@@ -20,7 +20,7 @@ def LoadFakeUsers(file_path):
 def LoadCities(file_path):
     cities = []
 
-    df = pandas.read_csv(file_path,encoding='iso-8859-1')
+    df = pandas.read_csv(file_path,encoding='iso-8859-1') # required encoding for this file
     df = df[df["population"] > 10000.0]
     df = df[(df["country code"] == "CA" )| (df["country code"] == "US") | (df["country code"] == "MX")]
     df = df.sort_values(by=['population'],ascending=False)
