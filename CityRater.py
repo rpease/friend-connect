@@ -15,6 +15,12 @@ import math
 class CityRater:
 
     driving_speed_kph = 112.65
+	
+	cities: list
+	users: list
+	_weights: dict
+	_valid_calculation = bool
+	
     
     def __init__(self,cities,users = []):
         self._cities = cities
@@ -22,56 +28,56 @@ class CityRater:
         self._Initialize_Weights()
         self._valid_calculation = False
 
-    def _Initialize_Weights(self):
+    def _initialize_weights(self):
         self._weights = {}
         self.Set_Haversine_Weight(1.0)
         self.Set_Population_Weight(1.0)
         self.Set_Travel_Time_Weight(1.0)
         self.Set_Drive_Distance_Weight(1.0)
 
-    @dispatch(Friend)
-    def Add_User(self,user):
+    @dispatch(User)
+    def add_user(self,user: user):
         self._valid_calculation = False
         self._users.append(user)
 
     @dispatch(list)
-    def Add_Users(self,users):
+    def add_users(self,users: list):
         for user in users:
-            self.Add_User(user)
+            self.add_user(user)
 
-    def Set_Users(self,users):
+    def set_users(self,users: list):
         self._valid_calculation = False
         self._users = users
 
-    def Get_Top_Cities(self,num = 10):
+    def get_top_cities(self,num = 10):
         if not self._valid_calculation:
             self._Calculate_Scores()
         self._cities.sort(reverse=True)
         return self._cities[:num]
 
-    def Set_Haversine_Weight(self,weight):
+    def set_haversine_weight(self,weight):
         self._valid_calculation = False
         self._weights["hav"] = weight
 
-    def Set_Population_Weight(self,weight):
+    def set_population_weight(self,weight):
         self._valid_calculation = False
         self._weights["pop"] = weight
 
-    def Set_Travel_Time_Weight(self,weight):
+    def set_travel_time_weight(self,weight):
         self._valid_calculation = False
         self._weights["time"] = weight
 
-    def Set_Drive_Distance_Weight(self,weight):
+    def set_drive_distance_weight(self,weight):
         self._valid_calculation = False
         self._weights["drive"] = weight
 
-    def _Score_Function(self,city):
+    def _score_function(self,city):
         score = self._weights["pop"]*city.Get_NormScore("pop") - self._weights["hav"]*city.Get_NormScore("hav") - self._weights["time"]*city.Get_NormScore("time") - self._weights["drive"]*city.Get_NormScore("drive")
         if score < 0:
             score = 0.0
         return score
 
-    def _Calculate_Scores(self):
+    def _calculate_scores(self):
 
         max_dict = {}
         max_dict["pop"] = 0.0
@@ -129,18 +135,18 @@ class CityRater:
         for city in self._cities:
             for key,max_value in max_dict.items():
                 if max_value > 0:
-                    city.Set_NormScore(key,city.Get_SubScore(key)/max_value)
-            city.Set_Score(self._Score_Function(city))
+                    city.set_normScore(key,city.Get_SubScore(key)/max_value)
+            city.set_score(self._score_function(city))
         self._valid_calculation = True
 
-    def Get_Geographical_Center(self):
+    def get_geographical_center(self):
         avg_lat = 0.0
         avg_lon = 0.0
          
         for user in self._users:
-            coord = user.Get_Location()
-            avg_lat += coord.Get_Latitude()
-            avg_lon += coord.Get_Longitude()
+            coord = user.get_location()
+            avg_lat += coord.get_latitude()
+            avg_lon += coord.get_longitude()
         
         avg_lat /= len(self._users)
         avg_lon /= len(self._users)
@@ -148,12 +154,12 @@ class CityRater:
         return (avg_lat,avg_lon)
 
     # https://stackoverflow.com/questions/31696411/google-maps-directions-python
-    def Get_Driving_Directions(self,city,user):
-        return self._Google_Estimate_API(city,user)          
+    def get_driving_directions(self,city,user):
+        return self._google_estimate_API(city,user)          
 
-    def _Google_Directions_API(self,city,user) :
-        start = city.Get_Google_API_String()
-        finish = user.Get_Coordinate().Get_Google_API_String()
+    def _google_directions_API(self,city,user) :
+        start = city.get_google_API_string()
+        finish = user.get_coordinate().get_google_API_string()
 
         url = 'http://maps.googleapis.com/maps/api/directions/json?%s' % urllib.parse.urlencode((
                     ('origin', start),
@@ -176,9 +182,9 @@ class CityRater:
 
         raise Exception("Couldn't complete Google API Request.")      
 
-    def _Google_Estimate_API(self,city,user) :
-        start = city.Get_Google_API_String()
-        finish = user.Get_Coordinate().Get_Google_API_String()
+    def _google_estimate_API(self,city,user) :
+        start = city.get_google_API_string()
+        finish = user.get_coordinate().get_google_API_string()
 
         url = 'https://maps.googleapis.com/maps/api/distancematrix/json?%s' % urllib.parse.urlencode((
                     ('origins', start),
@@ -201,19 +207,19 @@ class CityRater:
 
         raise Exception("Couldn't complete Google API Request.")
 
-    def _Google_Estimate_API_Matrix(self) :
+    def _google_estimate_API_matrix(self) :
 
         distance_matrix = np.empty([len(self._cities),len(self._users)])
         time_matrix = np.empty([len(self._cities),len(self._users)])
 
         start_string = ''
         for user in self._users:
-            start_string += user.Get_Location().Get_Coordinate().Get_Google_API_String() + '|'
+            start_string += user.get_location().get_coordinate().get_google_API_string() + '|'
         start_string = start_string[:-1] # ignore last bar
         
         finish_string = ''
         for city in self._cities:
-            finish_string += city.Get_Coordinate().Get_Google_API_String() + '|'
+            finish_string += city.get_coordinate().get_google_API_string() + '|'
 
         url = 'https://maps.googleapis.com/maps/api/distancematrix/json?%s' % urllib.parse.urlencode((
                     ('origins', start_string),
@@ -240,7 +246,7 @@ class CityRater:
         
         raise Exception(result["error_message"]) 
 
-    def Plot_Results(self):
+    def plot_results(self):
         x_data = []
         y_data = []
         f_data = []
