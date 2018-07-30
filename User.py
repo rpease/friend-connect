@@ -1,14 +1,14 @@
 from multipledispatch import dispatch
 from Location import *
-import typying
+import typing
 
 class User:
 
-	_name: str
-	_user_id: int
-	_location: GeoLocation	
-
+    _name: str
+    _user_id: int
+    _location: GeoCoordinate
     _static_user_id = 0
+
     @dispatch(str)
     def __init__(self,name: str):
         self._name = name
@@ -24,21 +24,19 @@ class User:
         out_string = f"{self._user_id}\t{self._name}"
         return out_string
 
-    @dispatch(GeoLocation)
-    def set_location(self,location: GeoLocation):
+    @dispatch(GeoCoordinate)
+    def set_location(self,location: GeoCoordinate):
         self._location = location
-		self._location.set_name(self._name)
 
     @dispatch(float,float)
     def set_location(self,latitude: float,longitude: float):
-        self._location = GeoLocation(self._name,latitude,longitude)
+        self._location = GeoCoordinate(latitude,longitude)
 
-    def get_location(self)-> GeoLocation:
+    def get_location(self)-> GeoCoordinate:
         return self._location
-		
-	def get_ID(self)-> int:
-		return self._user_id
-		
-	def get_name(self)-> str:
-		return self._name
-		
+
+    def get_ID(self)-> int:
+        return self._user_id
+
+    def get_name(self)-> str:
+        return self._name
