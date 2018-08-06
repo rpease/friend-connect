@@ -1,2 +1,2 @@
 session_id,fun,haversine,drive_distance,drive_time
-0,1,1,0.5,0.5
+0,1,-1,-0.5,-0.5
