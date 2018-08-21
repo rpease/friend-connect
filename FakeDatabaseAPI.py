@@ -38,7 +38,7 @@ class FakeDatabaseAPI:
         self._city_table["longitude"] = self._city_table["longitude"].astype(float)
         self._city_table["population"] = self._city_table["population"].astype(float)
         self._city_table = self._city_table.sort_values(by=['population'],ascending=False)
-        self._city_table = self._city_table.iloc[:500]
+        self._city_table = self._city_table.iloc[:10]
 
     def load_park_table(self, park_file_path: str):
         """
@@ -200,7 +200,6 @@ class FakeDatabaseAPI:
                     if value < self._metric_table[session_id]["MIN"][metric]:
                         self._metric_table[session_id]["MIN"][metric] = value
                 
-
     def _get_destination_scores(self,session_id: int)->dict:
 
         if not session_id in self._metric_table:
@@ -268,6 +267,10 @@ class FakeDatabaseAPI:
         full_data["metadata"] = {}
         full_data["metadata"]["max_score"] = max_value
         full_data["metadata"]["min_score"] = min_value
+        full_data["metadata"]["center"] = {}
+        lat,lon = self.get_geographical_center(session_id)
+        full_data["metadata"]["center"]["latitude"] = lat
+        full_data["metadata"]["center"]["longitude"] = lon        
 
         return json.dumps(full_data)
 
@@ -294,3 +297,22 @@ class FakeDatabaseAPI:
         if not (self._weight_table.has_key(session_id)):
             self._weight_table[session_id] = {"fun":1.0, "haversine": 1.0,"drive_distance": 1.0,"drive_time": 1.0}
         self._weight_table[session_id][key] = new_value
+
+    def get_geographical_center(self, session_id: int)->str:
+        
+        lat_center = 0.0
+        lon_center = 0.0
+        num_users = 0
+        for u,user in self._users_table.iterrows():
+
+            name = user["Name"]
+            lat = user["Latitude"]
+            lon = user["Longitude"]
+
+            lat_center += lat
+            lon_center += lon
+        
+        lat_center /= num_users
+        lon_center /= num_users
+
+        return lat_center,lon_center
