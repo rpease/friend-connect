@@ -31,13 +31,13 @@ class FakeDatabaseAPI:
         :return:
         """
 
-        df = pd.read_csv(city_file_path, encoding='iso-8859-1', index_col="name")  # required encoding for this file
+        df = pd.read_csv(city_file_path, encoding='iso-8859-1', index_col="id")  # required encoding for this file
         self._city_table = df[(df["country code"] == "CA") | (df["country code"] == "US") | (df["country code"] == "MX")]
         self._city_table["latitude"] = self._city_table["latitude"].astype(float)
         self._city_table["longitude"] = self._city_table["longitude"].astype(float)
         self._city_table["population"] = self._city_table["population"].astype(float)
         self._city_table = self._city_table.sort_values(by=['population'],ascending=False)
-        self._city_table = self._city_table.iloc[:200]
+        self._city_table = self._city_table.iloc[:500]
 
     def load_park_table(self, park_file_path: str):
         """
@@ -87,7 +87,6 @@ class FakeDatabaseAPI:
         pass
 
     def get_destination_coordinate(self,name: str)->tuple:
-        print(name)
         lat = float(self._city_table.loc[name,"latitude"])
         lon = float(self._city_table.loc[name,"longitude"])
         return (lat,lon)
@@ -99,10 +98,10 @@ class FakeDatabaseAPI:
         """
         dict_matrix = {}
 
-        for city_name,city in self._city_table.iterrows():            
+        for city_id,city in self._city_table.iterrows():            
             c_lat = city["latitude"]
             c_lon = city["longitude"]
-            dict_matrix[city_name] = {}
+            dict_matrix[city_id] = {}
 
             for u,user in self._users_table.iterrows():
                 name = user["Name"]                
@@ -110,7 +109,7 @@ class FakeDatabaseAPI:
                 u_lon = user["Longitude"]            
                 
                 distance_km = GeoUtilities.haversine_distance_km(u_lat,u_lon,c_lat,c_lon)                
-                dict_matrix[city_name][name] = distance_km
+                dict_matrix[city_id][name] = distance_km
 
         return dict_matrix
 
@@ -132,10 +131,10 @@ class FakeDatabaseAPI:
 
         driving_speed_kmh = 112.65
 
-        for city_name,city in self._city_table.iterrows():            
+        for city_id,city in self._city_table.iterrows():            
             c_lat = city["latitude"]
             c_lon = city["longitude"]
-            dict_matrix[city_name] = {}
+            dict_matrix[city_id] = {}
 
             for u,user in self._users_table.iterrows():
                 name = user["Name"]                
@@ -143,9 +142,9 @@ class FakeDatabaseAPI:
                 u_lon = user["Longitude"]            
                 
                 distance_km = GeoUtilities.haversine_distance_km(u_lat,u_lon,c_lat,c_lon)
-                dict_matrix[city_name][name] = {}
-                dict_matrix[city_name][name]["Distance [km]"] = distance_km
-                dict_matrix[city_name][name]["Time [hr]"] = distance_km/driving_speed_kmh
+                dict_matrix[city_id][name] = {}
+                dict_matrix[city_id][name]["Distance [km]"] = distance_km
+                dict_matrix[city_id][name]["Time [hr]"] = distance_km/driving_speed_kmh
 
         return dict_matrix
 
@@ -265,13 +264,14 @@ class FakeDatabaseAPI:
         
         max_value = -1e6
         min_value = 1e6
-        for city,value in scores.items():
-            lat,lon = self.get_destination_coordinate(city)
+        for city_id,value in scores.items():
+            lat,lon = self.get_destination_coordinate(city_id)
 
-            full_data["city_scores"][city] = {}
-            full_data["city_scores"][city]["score"] = value
-            full_data["city_scores"][city]["latitude"] = lat
-            full_data["city_scores"][city]["longitude"] = lon
+            full_data["city_scores"][city_id] = {}
+            full_data["city_scores"][city_id]["score"] = value
+            full_data["city_scores"][city_id]["latitude"] = lat
+            full_data["city_scores"][city_id]["longitude"] = lon
+            full_data["city_scores"][city_id]["name"] = self._city_table.loc[city_id]["name"]
 
             if value > max_value:
                 max_value = value

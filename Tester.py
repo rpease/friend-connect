@@ -28,7 +28,7 @@ def plot_cities(data, map):
         x_data.append(info["longitude"])
         y_data.append(info["latitude"])
         f_data.append(info["score"])
-        name_data.append(name)    
+        name_data.append(info["name"])    
 
     color_map = branca.colormap.linear.YlOrRd_09.scale(np.average(f_data),max(f_data))  
 
