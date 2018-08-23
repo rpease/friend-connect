@@ -1,47 +1,100 @@
-from Friend import *
-from Location import *
-from CityRater import *
-import pandas
+from FakeDatabaseAPI import *
+import matplotlib.pyplot as plt
+import seaborn as sns
+import folium
+from folium.plugins import HeatMap
+import branca
+import numpy as np
+import json
+import os
+import webbrowser
+import time
 
-def LoadFakeUsers(file_path):
-    friends = []
-    df = pandas.read_csv(file_path)
-    df["Name"] = df["Name"].astype(str)
-    df["Latitude"] = df["Latitude"].astype(float)
-    df["Longitude"] = df["Longitude"].astype(float)
+def get_folium_radius(min,max,value):
+    max_radius = 30.0
+    min_radius = 1.0
+    slope = max_radius-min_radius
 
-    for index,row in df.iterrows():        
-        new_friend = Friend(row["Name"],row["Latitude"],row["Longitude"])
-        friends.append(new_friend)
+    return (value-min)/(max-min)*slope + min_radius
 
-    print(f"Loaded {len(friends)} users")
-    return friends
+def plot_cities(data, map):
+    x_data = []
+    y_data = []
+    f_data = []
+    name_data = []    
 
-def LoadCities(file_path):
-    cities = []
+    # Add Cities to Map
+    for name,info in data["city_scores"].items():
+        x_data.append(info["longitude"])
+        y_data.append(info["latitude"])
+        f_data.append(info["score"])
+        name_data.append(info["name"])    
 
-    df = pandas.read_csv(file_path,encoding='iso-8859-1')
-    df = df[df["population"] > 10000.0]
-    df = df[(df["country code"] == "CA" )| (df["country code"] == "US") | (df["country code"] == "MX")]
-    df = df.sort_values(by=['population'],ascending=False)
-    df = df.iloc[:400]
+    color_map = branca.colormap.linear.YlOrRd_09.scale(np.average(f_data),max(f_data))  
 
-    for index,row in df.iterrows():        
-        new_city = City(row["name"],row["latitude"],row["longitude"])
-        new_city.Set_Population(row["population"])
-        cities.append(new_city)       
+    for i in range(len(x_data)):
+        color_code = color_map(f_data[i])
+        folium.CircleMarker(location=[y_data[i],x_data[i]],
+            fill=True,
+            color=color_code,
+            fill_color=color_code,
+            radius=get_folium_radius(data["metadata"]["min_score"],data["metadata"]["max_score"],f_data[i]),
+            popup=name_data[i]).add_to(map)
 
-    print(f"Loaded {len(cities)} cities")
-    return cities    
+    center_lat = data["metadata"]["center"]["latitude"]
+    center_lon = data["metadata"]["center"]["longitude"]
+    # Add Geographical Center of Users        
+    folium.Marker(location=[center_lat,center_lon],
+        popup="Geographical Center of Users",
+        icon=folium.Icon(color='green')).add_to(map)
 
-test_users = LoadFakeUsers(r"test_data\users.csv")
-test_cities = LoadCities(r"test_data\city15000.csv")
+def plot_users(data, map):
+    x_data = []
+    y_data = []
+    name_data = []  
 
-city_rater = CityRater(test_cities,test_users)
-city_rater.Set_Population_Weight(1.0)
-top_cities = city_rater.Get_Top_Cities()
+    # Add users to map
+    for name,info in data.items():
+        
+        x_data.append(info["longitude"])
+        y_data.append(info["latitude"])
+        name_data.append(name)
 
-for city in top_cities:
-    print(city)
+    for i in range(len(y_data)):
+        folium.Marker(location=[y_data[i],x_data[i]],
+            popup=name_data[i]).add_to(map)
 
-city_rater.Plot_Results()
+
+def plot_results(score_json: str, user_json: str):
+        
+        x_data_user = []
+        y_data_user = []
+
+        data = json.loads(score_json)
+        user_data = json.loads(user_json)
+
+        folium_map = folium.Map(location=[data["metadata"]["center"]["latitude"],data["metadata"]["center"]["longitude"]],zoom_start=7,tiles="CartoDB dark_matter")
+
+        plot_cities(data,folium_map)     
+        plot_users(user_data,folium_map)        
+
+        folium_map.save("Map.html")
+        #webbrowser.get("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s").open("Map.html",new=1)
+        webbrowser.open("Map.html")
+        time.sleep(1.0)
+        os.remove("Map.html")
+
+session_id = 0
+
+fakeAPI = FakeDatabaseAPI(r"test_data\city15000.csv","")
+fakeAPI.load_users_table(r"test_data\users.csv")
+fakeAPI.load_weight_table(r"test_data\weights.txt")
+
+data = fakeAPI.get_user_destination_distance_matrix(True)
+data = fakeAPI.get_scores(session_id)
+
+user_data = fakeAPI.get_user_data_json(session_id);
+
+plot_results(data,user_data)
+
+print("done")
