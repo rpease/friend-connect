@@ -38,7 +38,7 @@ class FakeDatabaseAPI:
         self._city_table["longitude"] = self._city_table["longitude"].astype(float)
         self._city_table["population"] = self._city_table["population"].astype(float)
         self._city_table = self._city_table.sort_values(by=['population'],ascending=False)
-        self._city_table = self._city_table.iloc[:10]
+        self._city_table = self._city_table.iloc[:200]
 
     def load_park_table(self, park_file_path: str):
         """
@@ -152,6 +152,17 @@ class FakeDatabaseAPI:
         :return: json string
         """
         return json.dumps(self.get_user_destination_driving_matrix(session_id))
+
+    def get_user_data(self, session_id: int)->dict:
+        data = {}
+        for u,user in self._users_table.iterrows():
+            data[user["Name"]] = {}
+            data[user["Name"]]["latitude"] = user["Latitude"]
+            data[user["Name"]]["longitude"] = user["Longitude"]
+        return data
+
+    def get_user_data_json(self, session_id: int)->str:
+        return json.dumps(self.get_user_data(session_id))
 
     def get_airport_matrix(self, session_id: int)-> str:
         """
@@ -311,6 +322,8 @@ class FakeDatabaseAPI:
 
             lat_center += lat
             lon_center += lon
+
+            num_users += 1
         
         lat_center /= num_users
         lon_center /= num_users
