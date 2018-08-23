@@ -1,6 +1,5 @@
 import pandas as pd
 from multipledispatch import dispatch
-import User
 import json
 import GeoUtilities
 
@@ -71,15 +70,19 @@ class FakeDatabaseAPI:
         weight_df = weight_df.set_index("session_id")
         self._weight_table = weight_df.to_dict("index")
 
-    def add_user(self,user: User):
-        """
-        Adds a new user to the database
-        :param user:
-        :return:
+    def add_user(self,name: str, latitude: float, longitude: float, session_id:int):
+        """Adds another user to the "database"
+        
+        Arguments:
+            name {str} -- [description]
+            latitude {float} -- [description]
+            longitude {float} -- [description]
+            session_id {int} -- [description]
         """
 
-        if not (self._users_table["Name"] == user.get_name()).any():
-            self._users_table.append({"Name": user.get_name(), "Latitude": user.get_location().latitude, "Longitude": user.get_location().longitude}, ignore_index=True)
+
+        if not (self._users_table["Name"] == name).any():
+            self._users_table.append({"Name": name, "Latitude": latitude, "Longitude": longitude}, ignore_index=True)
 
         pass
 
